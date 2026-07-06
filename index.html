@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Upload Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>📄 Exam Upload Portal</h1>
+
+    <form id="uploadForm">
+
+        <label>Student Name</label>
+        <input type="text" id="studentName" placeholder="Enter your name" required>
+
+        <label>Roll Number</label>
+        <input type="text" id="rollNumber" placeholder="Enter roll number" required>
+
+        <label>Subject</label>
+        <input type="text" id="subject" placeholder="Enter subject" required>
+
+        <label>Exam Name</label>
+        <input type="text" id="examName" placeholder="Enter exam name" required>
+
+        <label>Select Answer Sheet</label>
+        <input type="file" id="answerSheet" accept=".pdf,.jpg,.jpeg,.png" required>
+
+        <button type="submit">Upload</button>
+
+    </form>
+
+    <p id="message"></p>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
