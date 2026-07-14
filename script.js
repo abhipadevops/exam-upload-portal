@@ -2,7 +2,7 @@
 // Azure Function URL
 // Replace this with your Function App URL
 // =====================================================
-const functionUrl = "https://YOUR-FUNCTION-APP.azurewebsites.net/api/UploadAnswerSheet";
+const functionUrl = "https://exam-upload-api.azurewebsites.net/api/UploadAnswerSheet";
 
 // =====================================================
 // Upload Form
