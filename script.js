@@ -1,59 +1,64 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const uploadForm = document.getElementById("uploadForm");
-  const statusMessage = document.getElementById("statusMessage");
+const functionUrl =
+  "https://exam-upload-api-gdeab2d0e5exf9az.centralindia-01.azurewebsites.net/api/UploadAnswerSheet";
 
-  const functionUrl =
-    "https://exam-upload-api-gdeab2d0e5exf9az.centralindia-01.azurewebsites.net/api/UploadAnswerSheet";
-
-  uploadForm.addEventListener("submit", async (event) => {
+document
+  .getElementById("uploadForm")
+  .addEventListener("submit", async function (event) {
     event.preventDefault();
 
-    const studentName =
-      document.getElementById("studentName").value.trim();
+    const form = event.currentTarget;
+    const message = document.getElementById("message");
+    const submitButton = form.querySelector('button[type="submit"]');
 
-    const rollNumber =
-      document.getElementById("rollNumber").value.trim();
+    const studentName = document
+      .getElementById("studentName")
+      .value.trim();
 
-    const subject =
-      document.getElementById("subject").value.trim();
+    const rollNumber = document
+      .getElementById("rollNumber")
+      .value.trim();
 
-    const examName =
-      document.getElementById("examName").value.trim();
+    const subject = document
+      .getElementById("subject")
+      .value.trim();
 
-    const fileInput =
-      document.getElementById("answerSheet");
+    const examName = document
+      .getElementById("examName")
+      .value.trim();
 
-    const file = fileInput.files[0];
+    const fileInput = document.getElementById("answerSheet");
+    const answerSheet = fileInput.files[0];
 
-    statusMessage.textContent = "";
+    message.style.color = "black";
+    message.textContent = "";
 
     if (!studentName) {
-      statusMessage.textContent =
-        "Please enter the student name.";
+      message.style.color = "red";
+      message.textContent = "Please enter the student name.";
       return;
     }
 
     if (!rollNumber) {
-      statusMessage.textContent =
-        "Please enter the roll number.";
+      message.style.color = "red";
+      message.textContent = "Please enter the roll number.";
       return;
     }
 
     if (!subject) {
-      statusMessage.textContent =
-        "Please enter the subject.";
+      message.style.color = "red";
+      message.textContent = "Please enter the subject.";
       return;
     }
 
     if (!examName) {
-      statusMessage.textContent =
-        "Please enter the exam name.";
+      message.style.color = "red";
+      message.textContent = "Please enter the exam name.";
       return;
     }
 
-    if (!file) {
-      statusMessage.textContent =
-        "Please select an answer sheet file.";
+    if (!answerSheet) {
+      message.style.color = "red";
+      message.textContent = "Please select an answer sheet.";
       return;
     }
 
@@ -63,55 +68,43 @@ document.addEventListener("DOMContentLoaded", () => {
       "image/png"
     ];
 
-    if (!allowedTypes.includes(file.type)) {
-      statusMessage.textContent =
-        "Only PDF, JPG and PNG files are allowed.";
+    if (!allowedTypes.includes(answerSheet.type)) {
+      message.style.color = "red";
+      message.textContent =
+        "Only PDF, JPG, JPEG and PNG files are allowed.";
       return;
     }
 
-    const maximumFileSize =
-      10 * 1024 * 1024;
+    const maximumFileSize = 10 * 1024 * 1024;
 
-    if (file.size > maximumFileSize) {
-      statusMessage.textContent =
-        "File size must not exceed 10 MB.";
+    if (answerSheet.size > maximumFileSize) {
+      message.style.color = "red";
+      message.textContent =
+        "The answer sheet must not exceed 10 MB.";
       return;
     }
-
-    const submitButton =
-      uploadForm.querySelector(
-        'button[type="submit"]'
-      );
 
     submitButton.disabled = true;
-    submitButton.textContent =
-      "Uploading and processing...";
+    submitButton.textContent = "Uploading and processing...";
 
-    statusMessage.textContent =
-      "Uploading answer sheet and running OCR...";
+    message.style.color = "black";
+    message.textContent =
+      "Uploading answer sheet and processing the document...";
 
     try {
-      const response = await fetch(
-        functionUrl,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              file.type ||
-              "application/octet-stream",
-            "x-file-name": file.name,
-            "x-student-name":
-              studentName,
-            "x-roll-number":
-              rollNumber,
-            "x-subject":
-              subject,
-            "x-exam-name":
-              examName
-          },
-          body: file
-        }
-      );
+      const response = await fetch(functionUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            answerSheet.type || "application/octet-stream",
+          "x-file-name": answerSheet.name,
+          "x-student-name": studentName,
+          "x-roll-number": rollNumber,
+          "x-subject": subject,
+          "x-exam-name": examName
+        },
+        body: answerSheet
+      });
 
       let result;
 
@@ -119,59 +112,32 @@ document.addEventListener("DOMContentLoaded", () => {
         result = await response.json();
       } catch {
         throw new Error(
-          "The server returned an invalid response."
+          "The Function App returned an invalid response."
         );
       }
 
       if (!response.ok || !result.success) {
         throw new Error(
-          result.message ||
-          "Upload failed."
+          result.message || `Upload failed with status ${response.status}.`
         );
       }
 
-      statusMessage.innerHTML = "";
+      message.style.color = "green";
+      message.innerHTML =
+        "<b>✅ Upload Successful</b><br><br>" +
+        "<b>File:</b> " +
+        result.fileName +
+        "<br><br>" +
+        "The document was read successfully and its extracted data was saved internally for AI evaluation.";
 
-      const successHeading =
-        document.createElement("h3");
-
-      successHeading.textContent =
-        "✅ Upload Successful";
-
-      const fileParagraph =
-        document.createElement("p");
-
-      fileParagraph.textContent =
-        `File: ${result.fileName}`;
-
-      const processingParagraph =
-        document.createElement("p");
-
-      processingParagraph.textContent =
-        "OCR completed and the extracted data was saved internally for AI evaluation.";
-
-      statusMessage.appendChild(
-        successHeading
-      );
-
-      statusMessage.appendChild(
-        fileParagraph
-      );
-
-      statusMessage.appendChild(
-        processingParagraph
-      );
-
-      uploadForm.reset();
+      form.reset();
     } catch (error) {
       console.error(error);
 
-      statusMessage.textContent =
-        `Upload failed: ${error.message}`;
+      message.style.color = "red";
+      message.textContent = `Upload failed: ${error.message}`;
     } finally {
       submitButton.disabled = false;
-      submitButton.textContent =
-        "Upload Answer Sheet";
+      submitButton.textContent = "Upload";
     }
   });
-});
