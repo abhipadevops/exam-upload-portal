@@ -1,97 +1,177 @@
-// =====================================================
-// Azure Function URL
-// Replace this with your Function App URL
-// =====================================================
-const functionUrl = "https://exam-upload-api.azurewebsites.net/api/UploadAnswerSheet";
+document.addEventListener("DOMContentLoaded", () => {
+  const uploadForm = document.getElementById("uploadForm");
+  const statusMessage = document.getElementById("statusMessage");
 
-// =====================================================
-// Upload Form
-// =====================================================
-document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+  const functionUrl =
+    "https://exam-upload-api-gdeab2d0e5exf9az.centralindia-01.azurewebsites.net/api/UploadAnswerSheet";
 
-    e.preventDefault();
+  uploadForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-    const message = document.getElementById("message");
-    message.style.color = "black";
-    message.innerHTML = "Uploading...";
+    const studentName =
+      document.getElementById("studentName").value.trim();
 
-    // Read form values
-    const studentName = document.getElementById("studentName").value.trim();
-    const rollNumber = document.getElementById("rollNumber").value.trim();
-    const subject = document.getElementById("subject").value.trim();
-    const examName = document.getElementById("examName").value.trim();
+    const rollNumber =
+      document.getElementById("rollNumber").value.trim();
 
-    const fileInput = document.getElementById("answerSheet");
-    const answerSheet = fileInput.files[0];
+    const subject =
+      document.getElementById("subject").value.trim();
 
-    if (!answerSheet) {
-        message.style.color = "red";
-        message.innerHTML = "Please select an answer sheet.";
-        return;
+    const examName =
+      document.getElementById("examName").value.trim();
+
+    const fileInput =
+      document.getElementById("answerSheet");
+
+    const file = fileInput.files[0];
+
+    statusMessage.textContent = "";
+
+    if (!studentName) {
+      statusMessage.textContent =
+        "Please enter the student name.";
+      return;
     }
+
+    if (!rollNumber) {
+      statusMessage.textContent =
+        "Please enter the roll number.";
+      return;
+    }
+
+    if (!subject) {
+      statusMessage.textContent =
+        "Please enter the subject.";
+      return;
+    }
+
+    if (!examName) {
+      statusMessage.textContent =
+        "Please enter the exam name.";
+      return;
+    }
+
+    if (!file) {
+      statusMessage.textContent =
+        "Please select an answer sheet file.";
+      return;
+    }
+
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png"
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      statusMessage.textContent =
+        "Only PDF, JPG and PNG files are allowed.";
+      return;
+    }
+
+    const maximumFileSize =
+      10 * 1024 * 1024;
+
+    if (file.size > maximumFileSize) {
+      statusMessage.textContent =
+        "File size must not exceed 10 MB.";
+      return;
+    }
+
+    const submitButton =
+      uploadForm.querySelector(
+        'button[type="submit"]'
+      );
+
+    submitButton.disabled = true;
+    submitButton.textContent =
+      "Uploading and processing...";
+
+    statusMessage.textContent =
+      "Uploading answer sheet and running OCR...";
 
     try {
-
-        const response = await fetch(functionUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": answerSheet.type,
-                "x-file-name": answerSheet.name,
-                "x-student-name": studentName,
-                "x-roll-number": rollNumber,
-                "x-subject": subject,
-                "x-exam-name": examName
-            },
-            body: answerSheet
-        });
-
-        if (!response.ok) {
-
-            const errorText = await response.text();
-
-            message.style.color = "red";
-            message.innerHTML =
-                "Upload failed.<br><br>Status : " +
-                response.status +
-                "<br><br>" +
-                errorText;
-
-            return;
+      const response = await fetch(
+        functionUrl,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              file.type ||
+              "application/octet-stream",
+            "x-file-name": file.name,
+            "x-student-name":
+              studentName,
+            "x-roll-number":
+              rollNumber,
+            "x-subject":
+              subject,
+            "x-exam-name":
+              examName
+          },
+          body: file
         }
+      );
 
-        const result = await response.json();
+      let result;
 
-        if (result.success) {
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
 
-            message.style.color = "green";
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message ||
+          "Upload failed."
+        );
+      }
 
-            message.innerHTML =
-                "<b>✅ Upload Successful</b><br><br>" +
-                "<b>File :</b> " + result.fileName + "<br><br>" +
-                "<b>OCR Preview</b><br><br>" +
-                (result.ocrPreview && result.ocrPreview.length > 0
-                    ? result.ocrPreview.join("<br>")
-                    : "No OCR text returned.");
+      statusMessage.innerHTML = "";
 
-            document.getElementById("uploadForm").reset();
+      const successHeading =
+        document.createElement("h3");
 
-        } else {
+      successHeading.textContent =
+        "✅ Upload Successful";
 
-            message.style.color = "red";
-            message.innerHTML =
-                "❌ " + (result.message || "Unknown error");
+      const fileParagraph =
+        document.createElement("p");
 
-        }
+      fileParagraph.textContent =
+        `File: ${result.fileName}`;
 
+      const processingParagraph =
+        document.createElement("p");
+
+      processingParagraph.textContent =
+        "OCR completed and the extracted data was saved internally for AI evaluation.";
+
+      statusMessage.appendChild(
+        successHeading
+      );
+
+      statusMessage.appendChild(
+        fileParagraph
+      );
+
+      statusMessage.appendChild(
+        processingParagraph
+      );
+
+      uploadForm.reset();
+    } catch (error) {
+      console.error(error);
+
+      statusMessage.textContent =
+        `Upload failed: ${error.message}`;
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent =
+        "Upload Answer Sheet";
     }
-    catch (err) {
-
-        console.error(err);
-
-        message.style.color = "red";
-        message.innerHTML =
-            "<b>JavaScript Error</b><br><br>" +
-            err.message;
-    }
-
+  });
 });
